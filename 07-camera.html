@@ -41,6 +41,11 @@ const vertices = [
     [1, 1]
 ];
 
+const camera = {
+    position: [0, 0],
+    matrix: mat3.create()
+};
+
 const triangles = new Array(500).fill().map(() => ({
     position: [
         randomRange(0, canvas.width),
@@ -63,7 +68,8 @@ const triangles = new Array(500).fill().map(() => ({
         randomRange(0, 255),
         randomRange(0, 255),
         randomRange(0, 255),
-    ]
+    ],
+    matrix: mat3.create()
 }));
 
 let startTime = performance.now(); 
@@ -78,28 +84,23 @@ requestAnimationFrame(function loop() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     triangles.forEach(tri => {
+        const size = lerp(tri.size1, tri.size2, alpha);
+        const scaleMatrix = mat3.fromScaling(mat3.create(), [size, size]);
+
+        const rotation = tri.rotation + osc * tri.rotationOffset;
+        const rotationMatrix = mat3.fromRotation(mat3.create(), rotation);
+
+        const positionOffset = vec2.scale([0, 0], tri.positionOffset, osc);
+        const position = vec2.add([0, 0], tri.position, positionOffset);
+        const translationMatrix = mat3.fromTranslation(mat3.create(), position);
+
+        mat3.multiply(tri.matrix, rotationMatrix, scaleMatrix);
+        mat3.multiply(tri.matrix, translationMatrix, tri.matrix);
+
+        const transformMatrix = mat3.multiply(mat3.create(), camera.matrix, tri.matrix);
+
         const transformedVertices = vertices.map(v => {
-            let [x, y] = v;
-
-            const size = lerp(tri.size1, tri.size2, alpha);
-            x *= size;
-            y *= size;
-
-            let a = Math.atan2(y, x);
-            const r = Math.sqrt(x * x + y * y);
-
-            a += tri.rotation + osc * tri.rotationOffset;
-
-            x = Math.cos(a) * r;
-            y = Math.sin(a) * r;
-
-            x += tri.position[0] + osc * tri.positionOffset[0];
-            y += tri.position[1] + osc * tri.positionOffset[1];
-
-            return [
-                x,
-                y
-            ];
+            return vec2.transformMat3([0, 0], v, transformMatrix);
         });
 
         const color = [
@@ -130,7 +131,9 @@ canvas.addEventListener("mousemove", (event) => {
         const delta = vec2.subtract([0, 0], mouse, lastMouse);
         vec2.copy(lastMouse, mouse);
         
+        vec2.add(camera.position, camera.position, delta);
         
+        const translationMatrix = mat3.fromTranslation(camera.matrix, camera.position);
     }
 });
 

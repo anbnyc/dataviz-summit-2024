@@ -14,11 +14,14 @@
 </head>
 <body>
 <canvas id="canvas"></canvas>
+<script src="gl-matrix.js"></script>
 <script>
 const canvas = document.getElementById("canvas");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 const ctx = canvas.getContext("2d");
+
+const { mat3, vec2 } = glMatrix;
 
 function randomRange(min, max) {
     return Math.random() * (max - min) + min;
@@ -90,6 +93,27 @@ requestAnimationFrame(function loop() {
         ctx.closePath();
         ctx.fill();
     })
+});
+
+let dragging = false;
+let lastMouse = [0, 0];
+canvas.addEventListener("mousedown", (event) => {
+    dragging = true;
+    vec2.set(lastMouse, event.clientX, event.clientY);
+});
+
+canvas.addEventListener("mousemove", (event) => {
+    if (dragging) {
+        const mouse = [event.clientX, event.clientY];
+        const delta = vec2.subtract([0, 0], mouse, lastMouse);
+        vec2.copy(lastMouse, mouse);
+        
+        
+    }
+});
+
+window.addEventListener("mouseup", (event) => {
+    dragging = false;
 });
 
 </script>
