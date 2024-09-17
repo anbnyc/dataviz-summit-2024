@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <title>Joy of Math</title>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById("canvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext("2d");
+
+const vertices = [
+    [-1, 1],
+    [0, -1],
+    [1, 1]
+];
+
+const triangles = [{
+    color: [255, 0, 0]
+}];
+
+let startTime = performance.now(); 
+requestAnimationFrame(function loop() {
+    requestAnimationFrame(loop);
+
+    const t = (startTime - performance.now()) * 0.001;
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    triangles.forEach(tri => {
+        const transformedVertices = vertices.map(v => {
+            let [x, y] = v;
+
+            x *= 20;
+            y *= 20;
+
+            let a = Math.atan2(y, x);
+            const r = Math.sqrt(x * x + y * y);
+
+            a += Math.PI / 4;
+
+            x = Math.cos(a) * r;
+            y = Math.sin(a) * r;
+
+            x += canvas.width / 2;
+            y += canvas.height / 2;
+
+            return [
+                x,
+                y
+            ];
+        });
+
+        ctx.fillStyle = `rgb(${tri.color.join(",")})`;
+        ctx.beginPath();
+        ctx.moveTo(...transformedVertices[0]);
+        transformedVertices.slice(1).forEach(v => ctx.lineTo(...v));
+        ctx.closePath();
+        ctx.fill();
+    })
+});
+
+</script>
+</body>
+</html>

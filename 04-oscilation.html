@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <title>Joy of Math</title>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById("canvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext("2d");
+
+function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+const vertices = [
+    [-1, 1],
+    [0, -1],
+    [1, 1]
+];
+
+const triangles = new Array(500).fill().map(() => ({
+    position: [
+        randomRange(0, canvas.width),
+        randomRange(0, canvas.height)
+    ],
+    positionOffset: [
+        randomRange(-200, 200),
+        randomRange(-200, 200),
+    ],
+    size: randomRange(1, 30),
+    rotation: randomRange(0, 2 * Math.PI),
+    rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
+    color: [
+        randomRange(0, 255),
+        randomRange(0, 255),
+        randomRange(0, 255),
+    ]
+}));
+
+let startTime = performance.now(); 
+requestAnimationFrame(function loop() {
+    requestAnimationFrame(loop);
+
+    const t = (startTime - performance.now()) * 0.001;
+    const osc = Math.sin(t);
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    triangles.forEach(tri => {
+        const transformedVertices = vertices.map(v => {
+            let [x, y] = v;
+
+            x *= tri.size;
+            y *= tri.size;
+
+            let a = Math.atan2(y, x);
+            const r = Math.sqrt(x * x + y * y);
+
+            a += tri.rotation + osc * tri.rotationOffset;
+
+            x = Math.cos(a) * r;
+            y = Math.sin(a) * r;
+
+            x += tri.position[0] + osc * tri.positionOffset[0];
+            y += tri.position[1] + osc * tri.positionOffset[1];
+
+            return [
+                x,
+                y
+            ];
+        });
+
+        ctx.fillStyle = `rgb(${tri.color.join(",")})`;
+        ctx.beginPath();
+        ctx.moveTo(...transformedVertices[0]);
+        transformedVertices.slice(1).forEach(v => ctx.lineTo(...v));
+        ctx.closePath();
+        ctx.fill();
+    })
+});
+
+</script>
+</body>
+</html>
