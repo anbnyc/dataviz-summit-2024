@@ -33,16 +33,44 @@ const triangles = [{
     color: [255, 0, 0]
 }];
 
+const camera = {
+    position: [0, 0],
+    zoom: 1,
+    matrix: mat3.create()
+};
+
+////////////////////////////
+// Render Loop
+////////////////////////////
+
 let startTime = performance.now(); 
 requestAnimationFrame(function loop() {
     requestAnimationFrame(loop);
 
+    ////////////////////////////
+    // Time Since Rendering
+    // Started
+    ////////////////////////////
+
     const t = (startTime - performance.now()) * 0.001;
+
+    ////////////////////////////
+    // Clear the Canvas
+    ////////////////////////////
 
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    ////////////////////////////
+    // Loop Over All Triangles
+    ////////////////////////////
+
     triangles.forEach(tri => {
+
+        ////////////////////////////
+        // Transform Vertices
+        ////////////////////////////
+
         const transformedVertices = vertices.map(v => {
             let [x, y] = v;
 
@@ -52,6 +80,10 @@ requestAnimationFrame(function loop() {
             ];
         });
 
+        ////////////////////////////
+        // Draw Triangles
+        ////////////////////////////
+
         ctx.fillStyle = `rgb(${tri.color.join(",")})`;
         ctx.beginPath();
         ctx.moveTo(...transformedVertices[0]);
@@ -60,6 +92,23 @@ requestAnimationFrame(function loop() {
         ctx.fill();
     })
 });
+
+////////////////////////////
+// Utility Functions and
+// Event Listeners
+////////////////////////////
+
+function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+function normalize(min, max, value) {
+    return (value - min) / (max - min);
+}
+
+function lerp(value1, value2, alpha) {
+    return value1 * (1 - alpha) + value2 * alpha;
+}
 
 let dragging = false;
 let lastMouse = [0, 0];

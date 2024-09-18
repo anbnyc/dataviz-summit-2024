@@ -41,6 +41,8 @@ const vertices = [
     [1, 1]
 ];
 
+let dragging = false;
+let lastMouse = [0, 0];
 const camera = {
     position: [0, 0],
     zoom: 1,
@@ -58,31 +60,35 @@ function updateCameraMatrix() {
     mat3.multiply(camera.matrix, translationMatrix, camera.matrix);
 }
 
-const triangles = new Array(500).fill().map(() => ({
-    position: [
-        randomRange(0, canvas.width),
-        randomRange(0, canvas.height)
-    ],
-    positionOffset: [
-        randomRange(-200, 200),
-        randomRange(-200, 200),
-    ],
-    size1: randomRange(1, 30),
-    size2: randomRange(1, 30),
-    rotation: randomRange(0, 2 * Math.PI),
-    rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
-    color1: [
-        randomRange(0, 255),
-        randomRange(0, 255),
-        randomRange(0, 255),
-    ],
-    color2: [
-        randomRange(0, 255),
-        randomRange(0, 255),
-        randomRange(0, 255),
-    ],
-    matrix: mat3.create()
-}));
+const triangles = new Array(500).fill().map((_, i) => {
+    const column = i % 50;
+    const row = Math.floor(i / 50);
+    return {
+        position: [
+            column * 50,
+            Math.sin(column) * 70 + row * 300
+        ],
+        positionOffset: [
+            0,
+            0,
+        ],
+        size1: 25,
+        size2: 25,
+        rotation: randomRange(0, 2 * Math.PI),
+        rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
+        color1: [
+            randomRange(0, 255),
+            randomRange(0, 255),
+            randomRange(0, 255),
+        ],
+        color2: [
+            randomRange(0, 255),
+            randomRange(0, 255),
+            randomRange(0, 255),
+        ],
+        matrix: mat3.create()
+    };
+});
 
 let startTime = performance.now(); 
 requestAnimationFrame(function loop() {
@@ -130,8 +136,6 @@ requestAnimationFrame(function loop() {
     })
 });
 
-let dragging = false;
-let lastMouse = [0, 0];
 canvas.addEventListener("mousedown", (event) => {
     dragging = true;
     vec2.set(lastMouse, event.clientX, event.clientY);
