@@ -122,13 +122,15 @@ canvas.addEventListener("mousemove", (event) => {
         const mouse = [event.clientX, event.clientY];
         const delta = vec2.subtract([0, 0], mouse, lastMouse);
         vec2.copy(lastMouse, mouse);
-        
-        
     }
 });
 
 window.addEventListener("mouseup", (event) => {
     dragging = false;
+});
+
+window.addEventListener("wheel", (event) => {
+
 });
 
 </script>

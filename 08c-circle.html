@@ -62,7 +62,7 @@ function updateCameraMatrix() {
 
 const triangles = new Array(500).fill().map((_, i) => {
     const theta = normalize(0, 50, i % 50) * 2 * Math.PI;
-    const r = Math.floor(i / 50 + 1) * 200;
+    const r = Math.floor(i / 50 + 1) * 50;
 
     return {
         position: [
@@ -159,7 +159,7 @@ window.addEventListener("mouseup", (event) => {
 });
 
 window.addEventListener("wheel", (event) => {
-    camera.zoom -= Math.sign(event.deltaY) * 0.05;
+    camera.zoom -= Math.sign(event.deltaY) * 0.01;
 
     updateCameraMatrix();
 });
