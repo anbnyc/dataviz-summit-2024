@@ -31,32 +31,33 @@ const vertices = [
 
 const triangles = new Array(500).fill().map((_, i) => {
     const theta = normalize(0, 50, i % 50) * 2 * Math.PI;
-    const r = Math.floor(i / 50 + 1) * 50; 
-
-
+    const r = Math.floor(i / 50 + 1) * 200;
 
     return {
         position: [
             r * Math.cos(theta) + canvas.width / 2,
             r * Math.sin(theta) + canvas.height / 2
         ],
-        positionOffset: [0, 0],
-        size1:  r / 25,
-        size2:  r / 30,
+        positionOffset: [
+            randomRange(-10, 10),
+            randomRange(-10, 10),
+        ],
+        size1:  r / 30,
+        size2:  r / 30, 
         rotation: randomRange(0, 2 * Math.PI),
-        rotationOffset: randomRange(0, Math.PI / 2),
+        rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
         color1: [
-            normalize(0, 500, r) * 255,
+            normalize(0, 1000, r) * 255,
             0,
-            255 - normalize(0, 500, r) * 255
+            255 - normalize(0, 1000, r) * 255
         ],
         color2: [
-            255 - normalize(0, 500, r) * 255,
-            normalize(0, 500, r) * 255,
             0,
+            255 - normalize(0, 1000, r) * 255,
+            normalize(0, 1000, r) * 255,
         ],
         matrix: mat3.create()
-    }
+    };
 });
 
 const camera = {
@@ -80,7 +81,7 @@ requestAnimationFrame(function loop() {
 
     const t = (startTime - performance.now()) * 0.001;
     const osc = Math.sin(t);
-    const alpha = normalize(0, 1, osc);
+    const alpha = normalize(-1, 1, osc);
 
     ////////////////////////////
     // Clear the Canvas
@@ -102,11 +103,11 @@ requestAnimationFrame(function loop() {
         const size = lerp(tri.size1, tri.size2, alpha);
         const scaleMatrix = mat3.fromScaling(mat3.create(), [size, size]);
 
-        const rotationMatrix = mat3.fromRotation(mat3.create(), tri.rotation + tri.rotationOffset * osc);
+        const rotationMatrix = mat3.fromRotation(mat3.create(), tri.rotation + osc * tri.rotationOffset);
 
         const positionOffset = vec2.scale([0, 0], tri.positionOffset, osc);
-        const translation = vec2.add([0, 0], tri.position, positionOffset);
-        const translationMatrix = mat3.fromTranslation(mat3.create(), translation);
+        const position = vec2.add([0, 0], tri.position, positionOffset);
+        const translationMatrix = mat3.fromTranslation(mat3.create(), position);
 
         mat3.multiply(tri.matrix, rotationMatrix, scaleMatrix);
         mat3.multiply(tri.matrix, translationMatrix, tri.matrix);

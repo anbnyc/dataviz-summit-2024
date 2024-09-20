@@ -72,7 +72,7 @@ requestAnimationFrame(function loop() {
 
     const t = (startTime - performance.now()) * 0.001;
     const osc = Math.sin(t);
-    const alpha = normalize(0, 1, osc);
+    const alpha = normalize(-1, 1, osc);
 
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
