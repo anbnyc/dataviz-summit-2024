@@ -23,59 +23,85 @@ const ctx = canvas.getContext("2d");
 
 const { mat3, vec2 } = glMatrix;
 
-function randomRange(min, max) {
-    return Math.random() * (max - min) + min;
-}
-
 const vertices = [
     [-1, 1],
     [0, -1],
     [1, 1]
 ];
 
-const triangles = new Array(500).fill().map(() => ({
-    position: [
-        randomRange(0, canvas.width),
-        randomRange(0, canvas.height)
-    ],
-    positionOffset: [
-        randomRange(-200, 200),
-        randomRange(-200, 200),
-    ],
-    size: randomRange(1, 30),
-    rotation: randomRange(0, 2 * Math.PI),
-    rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
-    color: [
-        randomRange(0, 255),
-        randomRange(0, 255),
-        randomRange(0, 255),
-    ]
-}));
+const triangles = new Array(500).fill().map(() => {
+    return {
+        position: [
+            randomRange(0, canvas.width),
+            randomRange(0, canvas.height)
+        ],
+        positionOffset: [
+            randomRange(-100, 100),
+            randomRange(-100, 100),
+        ],
+        size: randomRange(5, 30),
+        rotation: randomRange(0, 2 * Math.PI),
+        rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
+        color: [
+            randomRange(0, 255),
+            randomRange(0, 255),
+            randomRange(0, 255),
+        ]
+    };
+});
+
+const camera = {
+    position: [0, 0],
+    zoom: 1,
+    matrix: mat3.create()
+};
+
+////////////////////////////
+// Render Loop
+////////////////////////////
 
 let startTime = performance.now(); 
 requestAnimationFrame(function loop() {
     requestAnimationFrame(loop);
 
+    ////////////////////////////
+    // Time Since Rendering
+    // Started
+    ////////////////////////////
+
     const t = (startTime - performance.now()) * 0.001;
     const osc = Math.sin(t);
+
+    ////////////////////////////
+    // Clear the Canvas
+    ////////////////////////////
 
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    ////////////////////////////
+    // Loop Over All Triangles
+    ////////////////////////////
+
     triangles.forEach(tri => {
+
+        ////////////////////////////
+        // Transform Vertices
+        ////////////////////////////
+
         const transformedVertices = vertices.map(v => {
             let [x, y] = v;
 
             x *= tri.size;
             y *= tri.size;
 
-            let a = Math.atan2(y, x);
             const r = Math.sqrt(x * x + y * y);
+            let theta = Math.atan2(y, x);
 
-            a += tri.rotation + osc * tri.rotationOffset;
+            theta += tri.rotation + osc * tri.rotationOffset;
 
-            x = Math.cos(a) * r;
-            y = Math.sin(a) * r;
+            x = r * Math.cos(theta);
+            y = r * Math.sin(theta);
 
             x += tri.position[0] + osc * tri.positionOffset[0];
             y += tri.position[1] + osc * tri.positionOffset[1];
@@ -86,6 +112,10 @@ requestAnimationFrame(function loop() {
             ];
         });
 
+        ////////////////////////////
+        // Draw Triangles
+        ////////////////////////////
+
         ctx.fillStyle = `rgb(${tri.color.join(",")})`;
         ctx.beginPath();
         ctx.moveTo(...transformedVertices[0]);
@@ -94,6 +124,34 @@ requestAnimationFrame(function loop() {
         ctx.fill();
     })
 });
+
+////////////////////////////
+// Utility Functions and
+// Event Listeners
+////////////////////////////
+
+function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+function normalize(min, max, value) {
+    return (value - min) / (max - min);
+}
+
+function lerp(value1, value2, alpha) {
+    return value1 * (1 - alpha) + value2 * alpha;
+}
+
+function updateCameraMatrix() {
+    const centerMatrix = mat3.fromTranslation(mat3.create(), [-canvas.width / 2, -canvas.height / 2]);
+    const zoomMatrix = mat3.fromScaling(mat3.create(), [camera.zoom, camera.zoom]);
+    const uncenterMatrix = mat3.fromTranslation(mat3.create(), [canvas.width / 2, canvas.height / 2]);
+    const translationMatrix = mat3.fromTranslation(mat3.create(), camera.position);
+
+    mat3.multiply(camera.matrix, zoomMatrix, centerMatrix);
+    mat3.multiply(camera.matrix, uncenterMatrix, camera.matrix);
+    mat3.multiply(camera.matrix, translationMatrix, camera.matrix);
+}
 
 let dragging = false;
 let lastMouse = [0, 0];
@@ -107,13 +165,15 @@ canvas.addEventListener("mousemove", (event) => {
         const mouse = [event.clientX, event.clientY];
         const delta = vec2.subtract([0, 0], mouse, lastMouse);
         vec2.copy(lastMouse, mouse);
-        
-        
     }
 });
 
 window.addEventListener("mouseup", (event) => {
     dragging = false;
+});
+
+window.addEventListener("wheel", (event) => {
+
 });
 
 </script>

@@ -30,31 +30,31 @@ const vertices = [
 ];
 
 const triangles = new Array(500).fill().map((_, i) => {
-    const theta = normalize(0, 50, i % 50) * 2 * Math.PI;
-    const r = Math.floor(i / 50 + 1) * 200;
+    const col = i % 20;
+    const row = Math.floor(i / 20);
 
     return {
         position: [
-            r * Math.cos(theta) + canvas.width / 2,
-            r * Math.sin(theta) + canvas.height / 2
+            col * 70,
+            row * 70
         ],
         positionOffset: [
             randomRange(-10, 10),
             randomRange(-10, 10),
         ],
-        size1:  r / 30,
-        size2:  r / 30, 
+        size1: randomRange(5, 20),
+        size2: randomRange(5, 20),
         rotation: randomRange(0, 2 * Math.PI),
         rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
         color1: [
-            normalize(0, 1000, r) * 255,
-            0,
-            255 - normalize(0, 1000, r) * 255
+            randomRange(0, 255),
+            randomRange(0, 255),
+            randomRange(0, 255),
         ],
         color2: [
-            0,
-            255 - normalize(0, 1000, r) * 255,
-            normalize(0, 1000, r) * 255,
+            randomRange(0, 255),
+            randomRange(0, 255),
+            randomRange(0, 255),
         ],
         matrix: mat3.create()
     };
@@ -103,7 +103,8 @@ requestAnimationFrame(function loop() {
         const size = lerp(tri.size1, tri.size2, alpha);
         const scaleMatrix = mat3.fromScaling(mat3.create(), [size, size]);
 
-        const rotationMatrix = mat3.fromRotation(mat3.create(), tri.rotation + osc * tri.rotationOffset);
+        const rotation = tri.rotation + osc * tri.rotationOffset;
+        const rotationMatrix = mat3.fromRotation(mat3.create(), rotation);
 
         const positionOffset = vec2.scale([0, 0], tri.positionOffset, osc);
         const position = vec2.add([0, 0], tri.position, positionOffset);
@@ -126,7 +127,7 @@ requestAnimationFrame(function loop() {
             lerp(tri.color1[0], tri.color2[0], alpha),
             lerp(tri.color1[1], tri.color2[1], alpha),
             lerp(tri.color1[2], tri.color2[2], alpha),
-        ];
+        ]
 
         ctx.fillStyle = `rgb(${color.join(",")})`;
         ctx.beginPath();

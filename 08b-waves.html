@@ -23,57 +23,27 @@ const ctx = canvas.getContext("2d");
 
 const { mat3, vec2 } = glMatrix;
 
-function randomRange(min, max) {
-    return Math.random() * (max - min) + min;
-}
-
-function normalize(min, max, value) {
-    return (value - min) / (max - min);
-}
-
-function lerp(value1, value2, alpha) {
-    return value1 * (1 - alpha) + value2 * alpha;
-}
-
 const vertices = [
     [-1, 1],
     [0, -1],
     [1, 1]
 ];
 
-let dragging = false;
-let lastMouse = [0, 0];
-const camera = {
-    position: [0, 0],
-    zoom: 1,
-    matrix: mat3.create()
-};
-
-function updateCameraMatrix() {
-    const centerMatrix = mat3.fromTranslation(mat3.create(), [-canvas.width / 2, -canvas.height / 2]);
-    const zoomMatrix = mat3.fromScaling(mat3.create(), [camera.zoom, camera.zoom]);
-    const uncenterMatrix = mat3.fromTranslation(mat3.create(), [canvas.width / 2, canvas.height / 2]);
-    const translationMatrix = mat3.fromTranslation(mat3.create(), camera.position);
-
-    mat3.multiply(camera.matrix, zoomMatrix, centerMatrix);
-    mat3.multiply(camera.matrix, uncenterMatrix, camera.matrix);
-    mat3.multiply(camera.matrix, translationMatrix, camera.matrix);
-}
-
 const triangles = new Array(500).fill().map((_, i) => {
-    const column = i % 50;
-    const row = Math.floor(i / 50);
+    const col = i % 20;
+    const row = Math.floor(i / 20);
+
     return {
         position: [
-            column * 50,
-            Math.sin(column) * 70 + row * 300
+            col * 70,
+            Math.sin(col) * 70 + row * 300
         ],
         positionOffset: [
-            0,
-            0,
+            randomRange(-10, 10),
+            randomRange(-10, 10),
         ],
-        size1: 25,
-        size2: 25,
+        size1: randomRange(5, 30),
+        size2: randomRange(5, 30),
         rotation: randomRange(0, 2 * Math.PI),
         rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
         color1: [
@@ -90,18 +60,46 @@ const triangles = new Array(500).fill().map((_, i) => {
     };
 });
 
+const camera = {
+    position: [0, 0],
+    zoom: 1,
+    matrix: mat3.create()
+};
+
+////////////////////////////
+// Render Loop
+////////////////////////////
+
 let startTime = performance.now(); 
 requestAnimationFrame(function loop() {
     requestAnimationFrame(loop);
+
+    ////////////////////////////
+    // Time Since Rendering
+    // Started
+    ////////////////////////////
 
     const t = (startTime - performance.now()) * 0.001;
     const osc = Math.sin(t);
     const alpha = normalize(-1, 1, osc);
 
+    ////////////////////////////
+    // Clear the Canvas
+    ////////////////////////////
+
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    ////////////////////////////
+    // Loop Over All Triangles
+    ////////////////////////////
+
     triangles.forEach(tri => {
+
+        ////////////////////////////
+        // Transform Vertices
+        ////////////////////////////
+
         const size = lerp(tri.size1, tri.size2, alpha);
         const scaleMatrix = mat3.fromScaling(mat3.create(), [size, size]);
 
@@ -121,11 +119,15 @@ requestAnimationFrame(function loop() {
             return vec2.transformMat3([0, 0], v, transformMatrix);
         });
 
+        ////////////////////////////
+        // Draw Triangles
+        ////////////////////////////
+
         const color = [
             lerp(tri.color1[0], tri.color2[0], alpha),
             lerp(tri.color1[1], tri.color2[1], alpha),
             lerp(tri.color1[2], tri.color2[2], alpha),
-        ];
+        ]
 
         ctx.fillStyle = `rgb(${color.join(",")})`;
         ctx.beginPath();
@@ -136,6 +138,36 @@ requestAnimationFrame(function loop() {
     })
 });
 
+////////////////////////////
+// Utility Functions and
+// Event Listeners
+////////////////////////////
+
+function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+function normalize(min, max, value) {
+    return (value - min) / (max - min);
+}
+
+function lerp(value1, value2, alpha) {
+    return value1 * (1 - alpha) + value2 * alpha;
+}
+
+function updateCameraMatrix() {
+    const centerMatrix = mat3.fromTranslation(mat3.create(), [-canvas.width / 2, -canvas.height / 2]);
+    const zoomMatrix = mat3.fromScaling(mat3.create(), [camera.zoom, camera.zoom]);
+    const uncenterMatrix = mat3.fromTranslation(mat3.create(), [canvas.width / 2, canvas.height / 2]);
+    const translationMatrix = mat3.fromTranslation(mat3.create(), camera.position);
+
+    mat3.multiply(camera.matrix, zoomMatrix, centerMatrix);
+    mat3.multiply(camera.matrix, uncenterMatrix, camera.matrix);
+    mat3.multiply(camera.matrix, translationMatrix, camera.matrix);
+}
+
+let dragging = false;
+let lastMouse = [0, 0];
 canvas.addEventListener("mousedown", (event) => {
     dragging = true;
     vec2.set(lastMouse, event.clientX, event.clientY);
@@ -146,9 +178,8 @@ canvas.addEventListener("mousemove", (event) => {
         const mouse = [event.clientX, event.clientY];
         const delta = vec2.subtract([0, 0], mouse, lastMouse);
         vec2.copy(lastMouse, mouse);
-        
+
         vec2.add(camera.position, camera.position, delta);
-        
         updateCameraMatrix();
     }
 });
@@ -158,8 +189,7 @@ window.addEventListener("mouseup", (event) => {
 });
 
 window.addEventListener("wheel", (event) => {
-    camera.zoom -= Math.sign(event.deltaY) * 0.05;
-
+    camera.zoom -= Math.sign(event.deltaY) * 0.01;
     updateCameraMatrix();
 });
 
