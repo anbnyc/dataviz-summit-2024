@@ -29,9 +29,31 @@ const vertices = [
     [1, 1]
 ];
 
-const triangles = new Array(1).fill().map(() => {
+const triangles = new Array(3000).fill().map((_, i) => {
+    const rawPosition = [
+        randomRange(0, canvas.width),
+        randomRange(0, canvas.height)
+    ];
+
+    const position = [
+        canvas.width / 100 * Math.floor(rawPosition[0] / (canvas.width / 100)),
+        canvas.height / 100 * Math.floor(rawPosition[1] / (canvas.height / 100))
+    ]
+
     return {
-        color: [255, 0, 0]
+        position: position,
+        positionOffset: [
+            0,
+            canvas.height
+        ],
+        size1: randomRange(10, 50),
+        size2: randomRange(10, 50),
+        rotation: randomRange(Math.PI / 6, Math.PI / 3),
+        rotationOffset: randomRange(-Math.PI / 2, Math.PI / 2),
+        color: [0, randomRange(0, 255), 0],
+        matrix: mat3.create(),
+        char: String.fromCharCode(Math.floor(randomRange(0, 65535))),
+        cycleMultiplier: Math.floor(randomRange(1, 5)),
     };
 });
 
@@ -54,7 +76,10 @@ requestAnimationFrame(function loop() {
     // Started
     ////////////////////////////
 
-    const t = (startTime - performance.now()) * 0.001;
+    const t = (performance.now() - startTime) * 0.001;
+    const osc = Math.sin(t);             // -1 to 1
+    const alpha = normalize(-1, 1, osc); //  0 to 1
+    // const cycle = t;
 
     ////////////////////////////
     // Clear the Canvas
@@ -63,23 +88,41 @@ requestAnimationFrame(function loop() {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    ctx.fillStyle = 'white';
+    ctx.fillText(`osc:   ${osc.toFixed(2)}`, 10, 15);
+    ctx.fillText(`alpha: ${alpha.toFixed(2)}`, 10, 25);
+    ctx.fillText(`t: ${t.toFixed(2)}`, 10, 35);
+
     ////////////////////////////
     // Loop Over All Triangles
     ////////////////////////////
 
     triangles.forEach(tri => {
 
+        const cycle = t / tri.cycleMultiplier;
+
         ////////////////////////////
         // Transform Vertices
         ////////////////////////////
 
-        const transformedVertices = vertices.map(v => {
-            let [x, y] = v;
+        const size = tri.size1; // lerp(tri.size1, tri.size2, alpha);
+        const scaleMatrix = mat3.fromScaling(mat3.create(), [size, size]);
 
-            return [
-                x,
-                y
-            ];
+        const rotation = tri.rotation; // + osc * tri.rotationOffset;
+        const rotationMatrix = mat3.fromRotation(mat3.create(), rotation);
+
+        const positionOffset = vec2.scale([0, 0], tri.positionOffset, cycle);
+        const position = vec2.add([0, 0], tri.position, positionOffset);
+        position[1] = position[1] % canvas.height;
+        const translationMatrix = mat3.fromTranslation(mat3.create(), position);
+
+        mat3.multiply(tri.matrix, rotationMatrix, scaleMatrix);
+        mat3.multiply(tri.matrix, translationMatrix, tri.matrix);
+
+        const transformMatrix = mat3.multiply(mat3.create(), camera.matrix, tri.matrix);
+
+        const transformedVertices = vertices.map(v => {
+            return vec2.transformMat3([0, 0], v, transformMatrix);
         });
 
         ////////////////////////////
@@ -87,9 +130,10 @@ requestAnimationFrame(function loop() {
         ////////////////////////////
 
         ctx.fillStyle = `rgb(${tri.color.join(",")})`;
-        ctx.beginPath();
-        ctx.moveTo(...transformedVertices[0]);
-        transformedVertices.slice(1).forEach(v => ctx.lineTo(...v));
+        // ctx.beginPath();
+        // ctx.moveTo(...transformedVertices[0]);
+        // transformedVertices.slice(1).forEach(v => ctx.lineTo(...v));
+        ctx.fillText(tri.char, transformedVertices[0][0], transformedVertices[0][1]);
         ctx.closePath();
         ctx.fill();
     })
@@ -135,6 +179,9 @@ canvas.addEventListener("mousemove", (event) => {
         const mouse = [event.clientX, event.clientY];
         const delta = vec2.subtract([0, 0], mouse, lastMouse);
         vec2.copy(lastMouse, mouse);
+
+        vec2.add(camera.position, camera.position, delta);
+        updateCameraMatrix();
     }
 });
 
@@ -143,7 +190,8 @@ window.addEventListener("mouseup", (event) => {
 });
 
 window.addEventListener("wheel", (event) => {
-
+    camera.zoom -= Math.sign(event.deltaY) * 0.01;
+    updateCameraMatrix();
 });
 
 </script>
